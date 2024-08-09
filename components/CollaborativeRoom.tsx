@@ -1,12 +1,13 @@
 'use client';
 import { SignedOut, SignInButton, SignedIn, UserButton } from '@clerk/nextjs';
 import { ClientSideSuspense, RoomProvider } from '@liveblocks/react/suspense'
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Editor } from './editor/Editor';
 import Header from './Header';
 import { ActiveCollaborators } from './ActiveCollaborators';
 import { Input } from './ui/input';
 import Image from 'next/image'
+import { updateDocument } from '@/lib/actions/room.actions';
 
 
 const CollaborativeRoom = ({ roomId, roomMetadata }: CollaborativeRoomProps) => {
@@ -19,7 +20,31 @@ const CollaborativeRoom = ({ roomId, roomMetadata }: CollaborativeRoomProps) => 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef= useRef<HTMLDivElement>(null);
 
-  const updateTitleHandler = (e: React.KeyboardEvent<HTMLInputElement>) => {}
+  const updateTitleHandler = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if(e.key === 'Enter') {
+      setLoading(true);
+
+      try {
+        if(documentTitle !== roomMetadata.title) {
+          const updatedDocument = await updateDocument(roomId, documentTitle);
+
+          if(updatedDocument) {
+            setEditing(false);
+          }
+        }
+      } catch (error) {
+        console.error(error);
+      }
+      
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if(editing && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editing])
 
   return (
     <RoomProvider id={roomId}>
